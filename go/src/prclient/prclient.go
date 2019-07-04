@@ -1,5 +1,5 @@
 // Endpoints for prToken microservice k8s stype URI
-// api/v1/namespace/{namespace}/resourcetype default 
+// api/v1/namespace/{namespace}/resourcetype default
 // namespace is pavedroad.io
 //
 // Return a list of tokens
@@ -26,8 +26,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	_ "errors"
 	"fmt"
+	"github.com/google/go-querystring/query"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -36,27 +36,25 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	_ "time"
-  "github.com/google/go-querystring/query"
 )
 
 const (
-  headerOTP           = "X-GitHub-OTP"
+	headerOTP = "X-GitHub-OTP"
 
-  mediaTypeV3                = "application/vnd.github.v3+json"
-  defaultMediaType           = "application/octet-stream"
-  mediaTypeV3SHA             = "application/vnd.github.v3.sha"
-  mediaTypeV3Diff            = "application/vnd.github.v3.diff"
-  mediaTypeV3Patch           = "application/vnd.github.v3.patch"
-  mediaTypeOrgPermissionRepo = "application/vnd.github.v3.repository+json"
+	mediaTypeV3                = "application/vnd.github.v3+json"
+	defaultMediaType           = "application/octet-stream"
+	mediaTypeV3SHA             = "application/vnd.github.v3.sha"
+	mediaTypeV3Diff            = "application/vnd.github.v3.diff"
+	mediaTypeV3Patch           = "application/vnd.github.v3.patch"
+	mediaTypeOrgPermissionRepo = "application/vnd.github.v3.repository+json"
 
-  prTokenAPIVersion       string = "/api/v1/"
-  prTokenNamespaceID      string = "namespace/"
-  prTokenDefaultNamespace string = "pavedroad.io/"
-  prTokenResourceType     string = "prTokens/"
-  prUIDToken              string ="{uid}"
+	prTokenAPIVersion       string = "/api/v1/"
+	prTokenNamespaceID      string = "namespace/"
+	prTokenDefaultNamespace string = "pavedroad.io/"
+	prTokenResourceType     string = "prTokens/"
+	prUIDToken              string = "{uid}"
 
-  // TODO: Turn this into a function
+	// TODO: Turn this into a function
 	defaultBaseURL = "https://api.pavedroad.io" + prTokenAPIVersion + prTokenNamespaceID + prTokenDefaultNamespace
 	uploadBaseURL  = "https://uploads.pavedroad.io/"
 	userAgent      = "prclient"
@@ -81,7 +79,7 @@ type Client struct {
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	// Services used for talking to different parts of the PavedRoad API.
-	Token       *TokensService
+	Token *TokensService
 }
 
 type service struct {
@@ -243,7 +241,6 @@ type Response struct {
 	PrevPage  int
 	FirstPage int
 	LastPage  int
-
 }
 
 // newResponse creates a new Response for the provided http.Response.
@@ -385,7 +382,7 @@ type ErrorResponse struct {
 	} `json:"block,omitempty"`
 	// Most errors will also include a documentation_url field pointing
 	// to some content that might help you resolve the error, see
-  // TODO:(tbd)  https://developer.pavedroad.io/v3/#client-errors
+	// TODO:(tbd)  https://developer.pavedroad.io/v3/#client-errors
 	DocumentationURL string `json:"documentation_url,omitempty"`
 }
 
@@ -437,7 +434,7 @@ These are the possible validation error codes:
     already_exists:
         another resource has the same valid as this field
     custom:
-        some resources return this, additional information is 
+        some resources return this, additional information is
         set in the Message field of the Error
 
 PavedRoad API docs: https://developer.github.com/v3/#client-errors
@@ -524,13 +521,13 @@ func (t *BasicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error
 // additionally supports users who have two-factor authentication enabled on
 // their GitHub account.
 type BasicAuthTransport struct {
-  Username string // GitHub username
-  Password string // GitHub password
-  OTP      string // one-time password for users with two-factor auth enabled
+	Username string // GitHub username
+	Password string // GitHub password
+	OTP      string // one-time password for users with two-factor auth enabled
 
-  // Transport is the underlying HTTP transport to use when making requests.
-  // It will default to http.DefaultTransport if nil.
-  Transport http.RoundTripper
+	// Transport is the underlying HTTP transport to use when making requests.
+	// It will default to http.DefaultTransport if nil.
+	Transport http.RoundTripper
 }
 
 // Client returns an *http.Client that makes requests that are authenticated

@@ -2,40 +2,40 @@ package prclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
-  "errors"
 )
 
-// TokenService handles communication with the token related
+// TokensService handles communication with the token related
 // methods of the PavedRoad API.
-
 type TokensService service
 
-// PrToken data structure for token storage
+// Token data structure for token storage
 type Token struct {
-  APIVersion string `json:"apiVersion"`
-  Kind       string `json:"kind"`
-  Metadata   Metadata `json:"metadata"`
-  Created string `json:"created,ignoreempty"`
-  Updated string `json:"updated"`
-  Active  bool   `json:"active"`
+	APIVersion string   `json:"apiVersion"`
+	Kind       string   `json:"kind"`
+	Metadata   Metadata `json:"metadata"`
+	Created    string   `json:"created,ignoreempty"`
+	Updated    string   `json:"updated"`
+	Active     bool     `json:"active"`
 }
 
-type  Metadata   struct {
-    Name      string   `json:"name"`
-    Namespace string   `json:"namespace"`
-    UID       string   `json:"uid"`
-    Site      string   `json:"site"`
-    EndPoint  string   `json:"endPoint"`
-    Token     string   `json:"token"`
-    Scope     []string `json:"scope"`
+// Metadata stored for a token
+type Metadata struct {
+	Name      string   `json:"name"`
+	Namespace string   `json:"namespace"`
+	UID       string   `json:"uid"`
+	Site      string   `json:"site"`
+	EndPoint  string   `json:"endPoint"`
+	Token     string   `json:"token"`
+	Scope     []string `json:"scope"`
 }
 
 func (u Token) String() string {
 	return Stringify(u)
 }
 
-// Get fetches a token using based on a users UUID. 
+// Get fetches a token using based on a users UUID.
 // PavedRoad API endpoint /prTokens/:uuid.
 func (s *TokensService) Get(ctx context.Context, uuid string) (*Token, *Response, error) {
 	var u string
