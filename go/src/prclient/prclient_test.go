@@ -2,6 +2,7 @@ package prclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,19 +12,18 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 	"testing"
-  "context"
-  "strings"
-  "time"
+	"time"
 )
 
 const (
 	// baseURLPath is a non-empty Client.BaseURL path to use during tests,
 	// to ensure relative URLs are used for all endpoints. See issue #752.
-	baseURLPath = "/api-v1"
+	baseURLPath = "/api/v1/namespace/pavedroad.io"
 )
 
-// setup sets up a test HTTP server along with a github.Client that is
+// setup sets up a test HTTP server along with a Client that is
 // configured to talk to that test server. Tests should register handlers on
 // mux which provide mock responses for the API method being tested.
 func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown func()) {
@@ -41,15 +41,13 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 		fmt.Fprintln(os.Stderr, "\t"+req.URL.String())
 		fmt.Fprintln(os.Stderr)
 		fmt.Fprintln(os.Stderr, "\tDid you accidentally use an absolute endpoint URL rather than relative?")
-		fmt.Fprintln(os.Stderr, "\tSee https://github.com/google/go-github/issues/752 for information.")
 		http.Error(w, "Client.BaseURL path prefix is not preserved in the request URL.", http.StatusInternalServerError)
 	})
 
 	// server is a test HTTP server used to provide mock API responses.
 	server := httptest.NewServer(apiHandler)
 
-	// client is the GitHub client being tested and is
-	// configured to use test server.
+	// client drives HTTP request to server
 	client = NewClient(nil)
 	url, _ := url.Parse(server.URL + baseURLPath + "/")
 	client.BaseURL = url
@@ -63,7 +61,7 @@ func setup() (client *Client, mux *http.ServeMux, serverURL string, teardown fun
 // directory, and create the file in that directory. It is the caller's
 // responsibility to remove the directory and its contents when no longer needed.
 func openTestFile(name, content string) (file *os.File, dir string, err error) {
-	dir, err = ioutil.TempDir("", "go-github")
+	dir, err = ioutil.TempDir("", "pr-test")
 	if err != nil {
 		return nil, dir, err
 	}
@@ -177,14 +175,14 @@ func TestNewClient(t *testing.T) {
 func TestNewRequest(t *testing.T) {
 	c := NewClient(nil)
 
-  type User struct {
-    Login string   `json:"login"`
-  }
+	type User struct {
+		Login string `json:"login"`
+	}
 
 	inURL, outURL := "/foo", "https://api.pavedroad.io/foo"
-  //TODO: Make this a full token init so it passes
+	//TODO: Make this a full token init so it passes
 
-  inBody, outBody := &User{Login: "l"}, `{"login":"l"}` +"\n"
+	inBody, outBody := &User{Login: "l"}, `{"login":"l"}`+"\n"
 
 	req, _ := c.NewRequest("GET", inURL, inBody)
 
@@ -241,7 +239,7 @@ func TestNewRequest_emptyUserAgent(t *testing.T) {
 	}
 }
 
-// If a nil body is passed to github.NewRequest, make sure that nil is also
+// If a nil body is passed to token.NewRequest, make sure that nil is also
 // passed to http.NewRequest. In most cases, passing an io.Reader that returns
 // no content is fine, since there is no difference between an HTTP request
 // body that is an empty string versus one that is not set at all. However in
@@ -307,10 +305,10 @@ func TestNewUploadRequest_errorForNoTrailingSlash(t *testing.T) {
 func TestResponse_populatePageValues(t *testing.T) {
 	r := http.Response{
 		Header: http.Header{
-			"Link": {`<https://api.github.com/?page=1>; rel="first",` +
-				` <https://api.github.com/?page=2>; rel="prev",` +
-				` <https://api.github.com/?page=4>; rel="next",` +
-				` <https://api.github.com/?page=5>; rel="last"`,
+			"Link": {`<https://api.pavedroad.com/?page=1>; rel="first",` +
+				` <https://api.pavedroad.io/?page=2>; rel="prev",` +
+				` <https://api.pavedroad.io/?page=4>; rel="next",` +
+				` <https://api.pavedroad.io/?page=5>; rel="last"`,
 			},
 		},
 	}
@@ -333,11 +331,11 @@ func TestResponse_populatePageValues(t *testing.T) {
 func TestResponse_populatePageValues_invalid(t *testing.T) {
 	r := http.Response{
 		Header: http.Header{
-			"Link": {`<https://api.github.com/?page=1>,` +
-				`<https://api.github.com/?page=abc>; rel="first",` +
-				`https://api.github.com/?page=2; rel="prev",` +
-				`<https://api.github.com/>; rel="next",` +
-				`<https://api.github.com/?page=>; rel="last"`,
+			"Link": {`<https://api.pavedroad.io/?page=1>,` +
+				`<https://api.pavedroad.io/?page=abc>; rel="first",` +
+				`https://api.pavedroad.io/?page=2; rel="prev",` +
+				`<https://api.pavedroad.io/>; rel="next",` +
+				`<https://api.pavedroad.io/?page=>; rel="last"`,
 			},
 		},
 	}
@@ -359,7 +357,7 @@ func TestResponse_populatePageValues_invalid(t *testing.T) {
 	// more invalid URLs
 	r = http.Response{
 		Header: http.Header{
-			"Link": {`<https://api.github.com/%?page=2>; rel="first"`},
+			"Link": {`<https://api.pavedroad.io/%?page=2>; rel="first"`},
 		},
 	}
 
@@ -412,8 +410,7 @@ func TestDo_httpError(t *testing.T) {
 }
 
 // Test handling of an error caused by the internal http client's Do()
-// function. A redirect loop is pretty unlikely to occur within the GitHub
-// API, but does allow us to exercise the right code path.
+// function.
 func TestDo_redirectLoop(t *testing.T) {
 	client, mux, _, teardown := setup()
 	defer teardown()
@@ -625,14 +622,3 @@ func TestBasicAuthTransport_transport(t *testing.T) {
 		t.Errorf("Expected custom transport to be used.")
 	}
 }
-
-/*
-func TestNestedStructAccessorNoPanic(t *testing.T) {
-	issue := &Token{Kind: nil}
-	got := issue.GetUser().GetPlan().GetName()
-	want := ""
-	if got != want {
-		t.Errorf("Issues.Get.GetUser().GetPlan().GetName() returned %+v, want %+v", got, want)
-	}
-}
-*/
