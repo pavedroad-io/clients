@@ -1,8 +1,3 @@
-// Copyright 2013 The go-github AUTHORS. All rights reserved.
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package prclient
 
 import (
@@ -11,9 +6,7 @@ import (
 )
 
 // Timestamp represents a time that can be unmarshalled from a JSON string
-// formatted as either an RFC3339 or Unix timestamp. This is necessary for some
-// fields since the GitHub API is inconsistent in how it represents times. All
-// exported methods of time.Time can be called on Timestamp.
+// formatted as either an RFC3339 or Unix timestamp.
 type Timestamp struct {
 	time.Time
 }

@@ -1,3 +1,17 @@
+/*
+Token implements access to prToken microservice which stores information about token to access 3rd party sites.
+
+HTTP verbs are translated into the following function calls:
+
+Verbs to Functions
+------   ---------
+POST     Create
+GET      Get
+PUT      Replace
+DELETE   Delete
+PATCH    Edit
+
+*/
 package prclient
 
 import (
@@ -36,11 +50,11 @@ func (u Token) String() string {
 }
 
 // Get fetches a token using based on a users UUID.
-// PavedRoad API endpoint /prTokens/:uuid.
+// PavedRoad API endpoint /prTokens/uuid.
 func (s *TokensService) Get(ctx context.Context, uuid string) (*Token, *Response, error) {
 	var u string
 	if uuid != "" {
-		u = fmt.Sprintf("%s/%v", prTokenResourceType, uuid)
+		u = fmt.Sprintf("%s/%v", tokenResource, uuid)
 	} else {
 		return nil, nil, errors.New("UUID is required")
 	}
@@ -58,12 +72,12 @@ func (s *TokensService) Get(ctx context.Context, uuid string) (*Token, *Response
 	return uResp, resp, nil
 }
 
-// Edit the authenticated user.
+// Edit the authenticated token.
 //
-// PavedRoad API docs: https://developer.github.com/v3/users/#update-the-authenticated-user
-func (s *TokensService) Edit(ctx context.Context, user *Token) (*Token, *Response, error) {
-	u := "user"
-	req, err := s.client.NewRequest("PATCH", u, user)
+// PavedRoad API docs: https://developer.pavedroad.io/v1/token/#update-token
+func (s *TokensService) Edit(ctx context.Context, token *Token) (*Token, *Response, error) {
+	u := "token"
+	req, err := s.client.NewRequest("PATCH", u, token)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,72 +91,25 @@ func (s *TokensService) Edit(ctx context.Context, user *Token) (*Token, *Respons
 	return uResp, resp, nil
 }
 
-// HovercardOptions specifies optional parameters to the TokensService.GetHovercard
-// method.
-type HovercardOptions struct {
-	// SubjectType specifies the additional information to be received about the hovercard.
-	// Possible values are: organization, repository, issue, pull_request. (Required when using subject_id.)
-	SubjectType string `url:"subject_type"`
-
-	// SubjectID specifies the ID for the SubjectType. (Required when using subject_type.)
-	SubjectID string `url:"subject_id"`
-}
-
-// Hovercard represents hovercard information about a user.
-type Hovercard struct {
-	Contexts []*TokenContext `json:"contexts,omitempty"`
-}
-
-// TokenContext represents the contextual information about user.
-type TokenContext struct {
-	Message *string `json:"message,omitempty"`
-	Octicon *string `json:"octicon,omitempty"`
-}
-
-// GetHovercard fetches contextual information about user. It requires authentication
-// via Basic Auth or via OAuth with the repo scope.
-//
-// PavedRoad API docs: https://developer.github.com/v3/users/#get-contextual-information-about-a-user
-func (s *TokensService) GetHovercard(ctx context.Context, user string, opt *HovercardOptions) (*Hovercard, *Response, error) {
-	u := fmt.Sprintf("users/%v/hovercard", user)
-	u, err := addOptions(u, opt)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := s.client.NewRequest("GET", u, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	hc := new(Hovercard)
-	resp, err := s.client.Do(ctx, req, hc)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return hc, resp, nil
-}
-
 // TokenListOptions specifies optional parameters to the TokensService.ListAll
 // method.
 type TokenListOptions struct {
-	// ID of the last user seen
-	Since int64 `url:"since,omitempty"`
+       // ID of the last token seen
+       Since int64 `url:"since,omitempty"`
 
-	// Note: Pagination is powered exclusively by the Since parameter,
-	// ListOptions.Page has no effect.
-	// ListOptions.PerPage controls an undocumented PavedRoad API parameter.
-	ListOptions
+       // Note: Pagination is powered exclusively by the Since parameter,
+       // ListOptions.Page has no effect.
+       // ListOptions.PerPage controls an undocumented PavedRoad API parameter.
+       ListOptions
 }
 
-// ListAll lists all PavedRoad users.
+// ListAll lists all PavedRoad token.
 //
-// To paginate through all users, populate 'Since' with the ID of the last user.
+// To paginate through all token, populate 'Since' with the ID of the last token.
 //
-// PavedRoad API docs: https://developer.github.com/v3/users/#get-all-users
+// PavedRoad API docs: https://developer.paviedroad.io/v3/token/#get-all-tokens
 func (s *TokensService) ListAll(ctx context.Context, opt *TokenListOptions) ([]*Token, *Response, error) {
-	u, err := addOptions("users", opt)
+	u, err := addOptions("token", opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,39 +119,11 @@ func (s *TokensService) ListAll(ctx context.Context, opt *TokenListOptions) ([]*
 		return nil, nil, err
 	}
 
-	var users []*Token
-	resp, err := s.client.Do(ctx, req, &users)
+	var token []*Token
+	resp, err := s.client.Do(ctx, req, &token)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return users, resp, nil
-}
-
-// AcceptInvitation accepts the currently-open repository invitation for the
-// authenticated user.
-//
-// PavedRoad API docs: https://developer.github.com/v3/repos/invitations/#accept-a-repository-invitation
-func (s *TokensService) AcceptInvitation(ctx context.Context, invitationID int64) (*Response, error) {
-	u := fmt.Sprintf("user/repository_invitations/%v", invitationID)
-	req, err := s.client.NewRequest("PATCH", u, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.client.Do(ctx, req, nil)
-}
-
-// DeclineInvitation declines the currently-open repository invitation for the
-// authenticated user.
-//
-// PavedRoad API docs: https://developer.github.com/v3/repos/invitations/#decline-a-repository-invitation
-func (s *TokensService) DeclineInvitation(ctx context.Context, invitationID int64) (*Response, error) {
-	u := fmt.Sprintf("user/repository_invitations/%v", invitationID)
-	req, err := s.client.NewRequest("DELETE", u, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.client.Do(ctx, req, nil)
+	return token, resp, nil
 }

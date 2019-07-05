@@ -1,8 +1,3 @@
-// Copyright 2013 The go-github AUTHORS. All rights reserved.
-//
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
 package prclient
 
 import (
@@ -14,8 +9,8 @@ import (
 
 var timestampType = reflect.TypeOf(Timestamp{})
 
-// Stringify attempts to create a reasonable string representation of types in
-// the GitHub library. It does things like resolve pointers to their values
+// Stringify attempts to create a reasonable string representation of types.
+// It does things like resolve pointers to their values
 // and omits struct fields with nil values.
 func Stringify(message interface{}) string {
 	var buf bytes.Buffer

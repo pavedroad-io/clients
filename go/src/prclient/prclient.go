@@ -1,24 +1,21 @@
-// Endpoints for prToken microservice k8s stype URI
-// api/v1/namespace/{namespace}/resourcetype default
-// namespace is pavedroad.io
+// PavedRoad APIs follow kubernetes conventions
+// /api/v1/namespace/{namespace}/resourcetype default
+// The default namespace is pavedroad.io
 //
-// Return a list of tokens
-// GET /api/v1/namespace/pavedroad.io/prTokensLIST
+// Verbs
+// ---------
+// GET:      Return a resource
+// POST:     Create a new token
+// PUT:      Update a specific toke
+// PATCH:    Partial update of a specific toke
+// DELETE:   Delete a specific toke
 //
-// Get a specific token
-// GET /api/v1/namespace/pavedroad.io/prTokens/{uid}
+// Resources
+// ---------
+// prToken:  A token for accessing 3rd party services
 //
-// Create a new token
-// POST /api/v1/namespace/pavedroad.io/prTokens
+// UUID are used to identify all resources
 //
-// Update a specific toke
-// PUT /api/v1/namespace/pavedroad.io/prTokens/{uid}
-//
-// Partial update of a specific toke
-// PATCH /api/v1/namespace/pavedroad.io/prTokens/{uid}
-//
-// Delete a specific toke
-// DELETE /api/v1/namespace/pavedroad.io/prTokens/{uid}
 
 package prclient
 
@@ -39,23 +36,22 @@ import (
 )
 
 const (
-	headerOTP = "X-GitHub-OTP"
+	headerOTP = "X-PavedRoad-OTP"
 
-	mediaTypeV3                = "application/vnd.github.v3+json"
-	defaultMediaType           = "application/octet-stream"
-	mediaTypeV3SHA             = "application/vnd.github.v3.sha"
-	mediaTypeV3Diff            = "application/vnd.github.v3.diff"
-	mediaTypeV3Patch           = "application/vnd.github.v3.patch"
-	mediaTypeOrgPermissionRepo = "application/vnd.github.v3.repository+json"
+	mediaTypeV3      = "application/vnd.pavedroad.v3+json"
+	defaultMediaType = "application/octet-stream"
 
-	prTokenAPIVersion       string = "/api/v1/"
-	prTokenNamespaceID      string = "namespace/"
-	prTokenDefaultNamespace string = "pavedroad.io/"
-	prTokenResourceType     string = "prTokens/"
-	prUIDToken              string = "{uid}"
+	apiVersion         string = "/api/v1/"
+	namespaceID        string = "namespace/"
+	defaultNamespace   string = "pavedroad.io/"
+	tokenResource      string = "prTokens"
+	gitHubResource     string = "prGitHub"
+	userResource       string = "prUser"
+	repositoryResource string = "prRepository"
+	uid                string = "{uid}"
 
 	// TODO: Turn this into a function
-	defaultBaseURL = "https://api.pavedroad.io" + prTokenAPIVersion + prTokenNamespaceID + prTokenDefaultNamespace
+	defaultBaseURL = "https://api.pavedroad.io" + apiVersion + namespaceID + defaultNamespace
 	uploadBaseURL  = "https://uploads.pavedroad.io/"
 	userAgent      = "prclient"
 )
@@ -437,7 +433,7 @@ These are the possible validation error codes:
         some resources return this, additional information is
         set in the Message field of the Error
 
-PavedRoad API docs: https://developer.github.com/v3/#client-errors
+PavedRoad API docs: https://developer.pavedroad.io/v1/#client-errors
 */
 type Error struct {
 	Resource string `json:"resource"` // resource on which the error occurred
@@ -518,11 +514,10 @@ func (t *BasicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error
 
 // BasicAuthTransport is an http.RoundTripper that authenticates all requests
 // using HTTP Basic Authentication with the provided username and password. It
-// additionally supports users who have two-factor authentication enabled on
-// their GitHub account.
+// additionally supports users who have two-factor authentication enabled.
 type BasicAuthTransport struct {
-	Username string // GitHub username
-	Password string // GitHub password
+	Username string // PavedRoad username
+	Password string // PavedRoad password
 	OTP      string // one-time password for users with two-factor auth enabled
 
 	// Transport is the underlying HTTP transport to use when making requests.
