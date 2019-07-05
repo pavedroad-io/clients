@@ -45,6 +45,7 @@ const (
 	namespaceID        string = "namespace/"
 	defaultNamespace   string = "pavedroad.io/"
 	tokenResource      string = "prTokens"
+	tokenResourceList  string = "prTokensLIST"
 	gitHubResource     string = "prGitHub"
 	userResource       string = "prUser"
 	repositoryResource string = "prRepository"

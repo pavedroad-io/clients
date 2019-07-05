@@ -2,7 +2,7 @@ package prclient
 
 import (
 	"context"
-	_ "encoding/json"
+	"encoding/json"
 	"fmt"
 	"github.com/google/go-cmp/cmp"
 	"net/http"
@@ -71,3 +71,61 @@ func TestTokensService_Get_invalidToken(t *testing.T) {
 	_, _, err := client.Token.Get(context.Background(), "%")
 	testURLParseError(t, err)
 }
+
+func TestTokensService_Delete_specifiedToken(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+
+  mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    testMethod(t, r, "DELETE")
+  })
+
+  _, err := client.Token.Delete(context.Background(), "1")
+
+  if err != nil {
+    t.Errorf("Teams.DeleteDiscussion returned error: %v", err)
+  }
+}
+
+func TestTokenService_Replace(t *testing.T) {
+  client, mux, _, teardown := setup()
+  defer teardown()
+
+  input := &Token{APIVersion: "1"}
+
+  mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    v := &Token{APIVersion: "1"}
+    json.NewDecoder(r.Body).Decode(v)
+    testMethod(t, r, "PUT")
+		fmt.Fprint(w, blankTokenJSON)
+  })
+
+  token, _, err := client.Token.Replace(context.Background(), input, "foo")
+  if err != nil {
+    t.Errorf("Token.Replace returned error: %v", err)
+  }
+
+	want := &Token{APIVersion: "1"}
+	if !cmp.Equal(token, want) {
+		t.Errorf("Tokens.Replace returned %+v, want %+v", token, want)
+	}
+}
+
+func TestTokensService_List_Tokens(t *testing.T) {
+	client, mux, _, teardown := setup()
+	defer teardown()
+  var opt *TokenListOptions
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+    fmt.Fprint(w, "")
+	})
+
+  //var u = fmt.Sprintf("%s/", tokenResourceList)
+  _, err := client.Token.List(context.Background(), opt )
+	if err != nil {
+		t.Errorf("Tokens.List returned error: %v", err)
+	}
+}
+
+
