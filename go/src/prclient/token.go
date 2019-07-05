@@ -7,10 +7,10 @@ Verbs to Functions
 ------   ---------
 POST     Create
 GET      Get
+GET/     List resources
 PUT      Replace
 DELETE   Delete
 PATCH    Edit
-
 */
 package prclient
 
@@ -49,7 +49,26 @@ func (u Token) String() string {
 	return Stringify(u)
 }
 
-// Get fetches a token using based on a users UUID.
+// Create a token
+// PavedRoad API endpoint /prTokens/
+func (s *TokensService) Create(ctx context.Context, newToken Token) (*Token, *Response, error) {
+	var u = fmt.Sprintf("%s/", tokenResource)
+
+	req, err := s.client.NewRequest("POST", u, newToken)
+	if err != nil {
+		return nil, nil, err
+	}
+
+  rToken := &Token{}
+	resp, err := s.client.Do(ctx, req, rToken)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return rToken, resp, nil
+}
+
+// Get fetches a token using based on a UUID.
 // PavedRoad API endpoint /prTokens/uuid.
 func (s *TokensService) Get(ctx context.Context, uuid string) (*Token, *Response, error) {
 	var u string
@@ -72,11 +91,33 @@ func (s *TokensService) Get(ctx context.Context, uuid string) (*Token, *Response
 	return uResp, resp, nil
 }
 
-// Edit the authenticated token.
-//
+// Delete a token using a UUID.
+// PavedRoad API endpoint /prTokens/uuid.
+func (s *TokensService) Delete(ctx context.Context, uuid string) (*Response, error) {
+	var u string
+
+	if uuid != "" {
+		u = fmt.Sprintf("%s/%v", tokenResource, uuid)
+	} else {
+		return nil, errors.New("UUID is required")
+	}
+	req, err := s.client.NewRequest("DELETE", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	return s.client.Do(ctx, req, nil)
+}
+
+// Edit a token.
 // PavedRoad API docs: https://developer.pavedroad.io/v1/token/#update-token
-func (s *TokensService) Edit(ctx context.Context, token *Token) (*Token, *Response, error) {
-	u := "token"
+func (s *TokensService) Edit(ctx context.Context, token *Token, uuid string) (*Token, *Response, error) {
+	var u string
+	if uuid != "" {
+		u = fmt.Sprintf("%s/%v", tokenResource, uuid)
+	} else {
+		return nil, nil, errors.New("UUID is required")
+	}
+
 	req, err := s.client.NewRequest("PATCH", u, token)
 	if err != nil {
 		return nil, nil, err
@@ -91,6 +132,31 @@ func (s *TokensService) Edit(ctx context.Context, token *Token) (*Token, *Respon
 	return tResp, resp, nil
 }
 
+// Replace a token.
+// PavedRoad API docs: https://developer.pavedroad.io/v1/token/#replace-token
+func (s *TokensService) Replace(ctx context.Context, token *Token, uuid string) (*Token, *Response, error) {
+	var u string
+	if uuid != "" {
+		u = fmt.Sprintf("%s/%v", tokenResource, uuid)
+	} else {
+		return nil, nil, errors.New("UUID is required")
+	}
+
+	req, err := s.client.NewRequest("PUT", u, token)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	tResp := new(Token)
+	resp, err := s.client.Do(ctx, req, tResp)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return tResp, resp, nil
+}
+
+
 // TokenListOptions specifies optional parameters to the TokensService.ListAll
 // method.
 type TokenListOptions struct {
@@ -104,26 +170,21 @@ type TokenListOptions struct {
 }
 
 // ListAll lists all PavedRoad token.
-//
-// To paginate through all token, populate 'Since' with the ID of the last token.
-//
-// PavedRoad API docs: https://developer.paviedroad.io/v3/token/#get-all-tokens
-func (s *TokensService) ListAll(ctx context.Context, opt *TokenListOptions) ([]*Token, *Response, error) {
-	u, err := addOptions("token", opt)
-	if err != nil {
-		return nil, nil, err
-	}
+func (s *TokensService) List(ctx context.Context, opt *TokenListOptions) (*Response, error) {
+	var u = fmt.Sprintf("%s/", tokenResourceList)
+
+  // convert to our method of paging
 
 	req, err := s.client.NewRequest("GET", u, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var token []*Token
 	resp, err := s.client.Do(ctx, req, &token)
 	if err != nil {
-		return nil, resp, err
+		return resp, err
 	}
 
-	return token, resp, nil
+	return resp, nil
 }
