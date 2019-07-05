@@ -82,13 +82,13 @@ func (s *TokensService) Edit(ctx context.Context, token *Token) (*Token, *Respon
 		return nil, nil, err
 	}
 
-	uResp := new(Token)
-	resp, err := s.client.Do(ctx, req, uResp)
+	tResp := new(Token)
+	resp, err := s.client.Do(ctx, req, tResp)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return uResp, resp, nil
+	return tResp, resp, nil
 }
 
 // TokenListOptions specifies optional parameters to the TokensService.ListAll
