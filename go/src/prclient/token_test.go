@@ -83,7 +83,7 @@ func TestTokensService_Delete_specifiedToken(t *testing.T) {
   _, err := client.Token.Delete(context.Background(), "1")
 
   if err != nil {
-    t.Errorf("Teams.DeleteDiscussion returned error: %v", err)
+    t.Errorf("UserIdMapper delete returned error: %v", err)
   }
 }
 
