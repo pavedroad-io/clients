@@ -49,7 +49,10 @@ const (
 	gitHubResource     string = "prGitHub"
 	userResource       string = "prUser"
 	repositoryResource string = "prRepository"
+	mapperResource      string = "prUserIdMappers"
+	mapperResourceList  string = "prUserIdMappersLIST"
 	uid                string = "{uid}"
+	cred               string = "{cred}"
 
 	// TODO: Turn this into a function
 	defaultBaseURL = "https://api.pavedroad.io" + apiVersion + namespaceID + defaultNamespace
@@ -77,6 +80,7 @@ type Client struct {
 
 	// Services used for talking to different parts of the PavedRoad API.
 	Token *TokensService
+	UserIdMapper *UserIdMappersService
 }
 
 type service struct {
@@ -152,6 +156,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c := &Client{client: httpClient, BaseURL: baseURL, UserAgent: userAgent, UploadURL: uploadURL}
 	c.common.client = c
 	c.Token = (*TokensService)(&c.common)
+	c.UserIdMapper = (*UserIdMappersService)(&c.common)
 	//c.Users = (*UsersService)(&c.common)
 	return c
 }
